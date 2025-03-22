@@ -8,7 +8,7 @@ public class MainClass {
         MainCanvas meuCanvas = new MainCanvas();
 
         JFrame f = new JFrame();
-        f.setSize(640, 480);
+        f.setSize(800, 600);
         f.setVisible(true);
         f.getContentPane().add(meuCanvas);
 
