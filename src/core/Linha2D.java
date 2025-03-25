@@ -6,29 +6,32 @@ import java.util.List;
 
 public class Linha2D {
     Ponto2D p1,p2;
-    private final List<Ponto2D> buffer;
 
 
     public Linha2D(Ponto2D a, Ponto2D b) {
+        super();
         this.p1 = a;
         this.p2 = b;
-        this.buffer = new ArrayList<>();
     }
-    public void draw(Graphics2D g) {
+    public void draw(Graphics2D g, byte[] bufferDeVideo) {
         g.setColor(Color.red);
 
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        buffer.clear();
-        drawBresenhamLine((int) p1.x, (int) p1.y, (int) p2.x, (int) p2.y, g);
-
-        //Desenha todos os pontos armazenados no buffer de uma só vez
-        for (Ponto2D ponto : buffer) {
-            g.fillRect((int) ponto.x, (int) ponto.y, 1, 1);
-        }
+        drawBresenhamLine((int) p1.x, (int) p1.y, (int) p2.x, (int) p2.y, bufferDeVideo);
     }
 
-    public void drawBresenhamLine(int x1, int y1, int x2, int y2, Graphics2D g){
+    public void drawPixel(int x, int y, int r, int g, int b, byte[] buffer) {
+        int pospix = y*(800*4)+x*4;
+
+        buffer[pospix] = (byte)255;
+        buffer[pospix+1] = (byte)(b&0xff);
+        buffer[pospix+2] = (byte)(g&0xff);
+        buffer[pospix+3] = (byte)(r&0xff);
+
+    }
+
+    public void drawBresenhamLine(int x1, int y1, int x2, int y2, byte[] buffer){
             int dx = Math.abs(x2 - x1);
             int dy = Math.abs(y2 - y1);
             int sx = (x1 < x2) ? 1 : -1; // Set X direction
@@ -36,7 +39,7 @@ public class Linha2D {
             int err = dx - dy;  // error
 
             while (true){
-                buffer.add(new Ponto2D(x1, y1));
+                drawPixel(x1, y1, 204, 0, 136,buffer);
                 if (x1 == x2 && y1 == y2) break;
 
                 int e2 = 2 * err;
@@ -51,9 +54,6 @@ public class Linha2D {
                     y1 += sy; // Move to Y direction
                 }
             }
-    }
-    public List<Ponto2D> getBuffer() {
-        return buffer;
     }
 
 }

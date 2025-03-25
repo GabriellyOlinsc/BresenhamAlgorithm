@@ -3,14 +3,14 @@ import core.Linha2D;
 import core.Ponto2D;
 
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 public class MainCanvas extends JPanel implements Runnable{
@@ -22,6 +22,7 @@ public class MainCanvas extends JPanel implements Runnable{
     int paintcounter = 0;
 
     BufferedImage imageBuffer;
+    byte bufferDeVideo[];
     int framecount = 0;
     int fps = 0;
 
@@ -31,6 +32,7 @@ public class MainCanvas extends JPanel implements Runnable{
     int clickY = 0;
     int mouseX = 0;
     int mouseY = 0;
+    BufferedImage imgtmp = null;
 
     private final int xMin = 50;
     private final int yMin = 50;
@@ -50,6 +52,12 @@ public class MainCanvas extends JPanel implements Runnable{
         setPreferredSize(new Dimension(H,W));
         setFocusable(true);
         clipping = new Clipping(xMin, yMin, xMax, yMax);
+
+
+        imageBuffer = new BufferedImage(W,H, BufferedImage.TYPE_4BYTE_ABGR);
+        bufferDeVideo = ((DataBufferByte)imageBuffer.getRaster().getDataBuffer()).getData();
+
+        System.out.println("Buffer SIZE "+bufferDeVideo.length );
 
         addKeyListener(new KeyListener() {
 
@@ -112,8 +120,12 @@ public class MainCanvas extends JPanel implements Runnable{
                 }else{
                     Ponto2D p2 = new Ponto2D(clickX, clickY);
                     Linha2D line = new Linha2D(drawLine, p2);
-                    lineList.add(line);
+                    Linha2D clippedLine = clipping.cohenSutherlandClip(line);
+                    if (clippedLine != null) {
+                        lineList.add(clippedLine);
+                    }
                     drawLine = null;
+                    repaint();
                 }
             }
 
@@ -150,41 +162,41 @@ public class MainCanvas extends JPanel implements Runnable{
                 // TODO Auto-generated method stub
 
             }
+
         });
 
-
-
     }
+
+
     @Override
     public void paint(Graphics g) {
         super.paint(g);
         g.setFont(f);
 
+        //limpar buffer antes de desenhar
+        for(int i = 0; i < bufferDeVideo.length; i++) {
+            bufferDeVideo[i] = 0;
+        }
+
         g.setColor(Color.white);
         g.fillRect(0, 0, W, H);
 
-		g.setColor(Color.green);
-        //g.drawRect(xMin, yMin, 700, 500);
-        g.drawRect(xMin, yMin, xMax - xMin, yMax - yMin);
-
-
-        g.setColor(Color.black);
         Graphics2D g2d = (Graphics2D) g;
         for (Linha2D linha : lineList) {
-            Linha2D clippedLine = clipping.cohenSutherlandClip(linha);
-            if (clippedLine != null) { // Verifica se a linha não foi completamente recortada
-                clippedLine.draw(g2d);
-            }
+            linha.draw(g2d, bufferDeVideo);
         }
-        System.out.println("Clipping Area: (" + xMin + ", " + yMin + ") -> (" + xMax + ", " + yMax + ")");
-        //System.out.println("Line Start: (" + x1 + ", " + y1 + ") End: (" + x2 + ", " + y2 + ")");
 
+        //Area do clipping
+		g.setColor(Color.green);
+        g.drawRect(xMin, yMin, xMax - xMin, yMax - yMin);
+
+        // Desenha a linha temporária (durante o arraste do mouse)
         g.setColor(Color.red);
-        if(drawLine!=null) {
+        if (drawLine != null) {
             g.drawLine((int)drawLine.x, (int)drawLine.y, mouseX, mouseY);
         }
 
-
+        // Exibe o buffer na tela
         g.drawImage(imageBuffer,0,0,null);
 
         g.setColor(Color.black);
@@ -219,6 +231,23 @@ public class MainCanvas extends JPanel implements Runnable{
                 framecount = 0;
                 segundo = novoSegundo;
             }
+        }
+    }
+
+    public BufferedImage loadImage(String filename) {
+        try {
+            imgtmp = ImageIO.read(new File(filename));
+
+            BufferedImage imgout = new BufferedImage(imgtmp.getWidth(), imgtmp.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+
+            imgout.getGraphics().drawImage(imgtmp, 0, 0, null);
+
+            imgtmp = null;
+
+            return imgout;
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            return null;
         }
     }
 }

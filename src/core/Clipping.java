@@ -81,17 +81,7 @@ public class Clipping {
         //return accept ? new Linha2D(new Ponto2D(x1, y1), new Ponto2D(x2, y2)) : null;
 
         if (accept) {
-            Linha2D novaLinha = new Linha2D(new Ponto2D(x1, y1), new Ponto2D(x2, y2));
-
-            // Filtramos os pontos para desenhar apenas os visíveis
-            List<Ponto2D> bufferFiltrado = new ArrayList<>();
-            for (Ponto2D ponto : line.getBuffer()) {
-                if (ponto.x >= xMin && ponto.x <= xMax && ponto.y >= yMin && ponto.y <= yMax) {
-                    bufferFiltrado.add(ponto);
-                }
-            }
-            novaLinha.getBuffer().addAll(bufferFiltrado);
-            return novaLinha;
+            return new Linha2D(new Ponto2D(x1, y1), new Ponto2D(x2, y2));
         }
 
         return null;
